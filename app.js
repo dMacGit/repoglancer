@@ -30,6 +30,19 @@ var REPOS_lastUpdated;
 var REPO_Number;
 var REPO_List  = {};
 
+/*
+  Notes on procedures:
+
+  - Grab user base repo page [https://api.github.com/users/USER_NAME]
+  - Get list of Repos/porjects [https://api.github.com/users/USER_NAME/repos]
+  - Store last update time & commit id for Repo
+  - Get contents url (Json object list) to Check README.md file details [https://api.github.com/users/USER_NAME/repos/REPO_NAME/contents/]
+  - Use [https://api.github.com/users/USER_NAME/repos/REPO_NAME/commits?path=README.md] after Repo to get commits targeting README.md file updates.
+   (Use jsonObject[0].commit.committer.date for latest commit)
+  - Use [https://api.github.com/repos/USER_NAME/REPO_NAME/releases] and JsonObject[0].tag_name to get latest release version
+   (Use object[0].name to get release name, and object[0].body to get description)
+*/
+
 async function query_user_Base()
 {
   try
