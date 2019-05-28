@@ -13,74 +13,65 @@ const port = 3000
   Grabs some basic info to show current state of each repo.
   - Repo name, 
   - Readme last update,
-  - Current dev version,
-  - Build errors,
+  - Current master/branch versions,
+  - Latest branches commits,
+  - Build errors, ???
+  - Current Tag
   - Release version
   It then displays this in the web page/app for easy viewing.
 */
 
+// Response variables
 var base_response_json = "{ Url Error: No data returned }";
 var repo_response_json;
-var USER_NAME = 'dMacGit'
+
+// Request URL variables
+var USER_NAME = 'dMacGit' //<-- Change this based on github username/profile
 var URL_USER_BASE_REQUEST = 'https://api.github.com/users/'+USER_NAME;
 var URL_USER_FOUND_REPOS = URL_USER_BASE_REQUEST+'/repos';
-var lastUpdatedTime;
-var update_Limit = 1; //<-- Set this as default to 15 (Minutes)
+var URL_USER_REPO_BASE = URL_USER_FOUND_REPOS+'/' // Add RepoName to end
+var URL_REPO_COMMIT_REQUEST_README_PREFIX = URL_USER_REPO_BASE // Add RepoName to end
+var URL_REPO_COMMIT_REQUEST_README_SUFFIX = '/commits?path=README.md';
+var URL_REPO_TAGS_PREFIX = URL_USER_REPO_BASE // Add RepoName to end
+var URL_REPO_TAGS_SUFFIX = '/tags'
+var URL_REPO_RELEASES_PREFIX = URL_USER_REPO_BASE // Add RepoName to end
+var URL_REPO_RELEASES_SUFFIX = '/releases'
+
+// User Repository variables
 var REPOS_lastUpdated;
 var REPO_Number;
 var REPO_List  = {};
 
+// Server sync variables
+var lastUpdatedTime;
+var update_Limit = 1; //<-- Set this as default to 15 (Minutes)
+
+
 /*
-  Notes on procedures:
+  TODO/Notes on procedures:
 
   - Grab user base repo page [https://api.github.com/users/USER_NAME]
   - Get list of Repos/porjects [https://api.github.com/users/USER_NAME/repos]
   - Store last update time & commit id for Repo
-  - Get contents url (Json object list) to Check README.md file details [https://api.github.com/users/USER_NAME/repos/REPO_NAME/contents/]
-  - Use [https://api.github.com/users/USER_NAME/repos/REPO_NAME/commits?path=README.md] after Repo to get commits targeting README.md file updates.
+  - Get contents url (Json object list) to Check README.md file details [https://api.github.com/users/USER_NAME/repos/REPO_NAME/contents/] ?? Not needed now, see below
+  - {README.md} Use [https://api.github.com/users/USER_NAME/repos/REPO_NAME/commits?path=README.md] after Repo to get commits targeting README.md file updates.
    (Use jsonObject[0].commit.committer.date for latest commit)
-  - Use [https://api.github.com/repos/USER_NAME/REPO_NAME/releases] and JsonObject[0].tag_name to get latest release version
+  - {Tags} Use [https://api.github.com/repos/USER_NAME/REPO_NAME/tags] to get object list of repo tags (jsonObject[0].name)
+  - {Releases} Use [https://api.github.com/repos/USER_NAME/REPO_NAME/releases] and JsonObject[0].tag_name to get latest release version
    (Use object[0].name to get release name, and object[0].body to get description)
+
 */
 
-async function query_user_Base()
-{
-  try
-  {
-    base_response_json = await query_user(URL_USER_BASE_REQUEST, base_response_json, true);
-    console.log(base_response_json);
-    REPO_Number = base_response_json.public_repos;
-    
-    
-    
-    console.log("User: ",base_response_json.login,"\nRepo count: ",base_response_json.public_repos,"\nLast updated: ",base_response_json.updated_at);
-  }
-  catch (error)
-  {
-    console.error("Query_user await function Error!");
-    console.error(error);
-  }
+/*
+  {Query_User} Main url requester fucntion
 
-};
+  This is used by decorator functions [] to simplify url reqesting
+  Handles header generating, and error handling of request/reponses
+  Also keeps track of update time for controll of server syncing and cacheing
 
-async function query_user_Repos()
-{
-  try
-  {
-    repo_response_json = await query_user(URL_USER_FOUND_REPOS, repo_response_json, false);
-    /*JSON.Array repo_list = repo_response_json*/
-    //console.log(repo_response_json);
-    update_Repos_Stats();
-    //console.log("User: ",base_response_json.login,"\nRepo count: ",base_response_json.public_repos,"\nLast updated: ",base_response_json.updated_at);
-  }
-  catch (error)
-  {
-    console.error("Query_user await function Error!");
-    console.error(error);
-  }
-
-};
-
+  Takes as input the URL_QUERY string, RETURN_DATA object, and third Boolean flag* (*Look into removing this flag!)
+  Uses promise/resove principle to return data to calling functions
+*/
 function query_user(url_query, result_data, query_base)
 {
   return new Promise((resolve, reject) => {
@@ -128,6 +119,73 @@ function query_user(url_query, result_data, query_base)
 	}).end();*/
 };
 
+/*
+  {Query_User_Base} Asynchronous base query function
+
+  This passes decorated url and data objects for the main "Query_User" url requester function
+
+  Controlls requests to do with the user's base github profile
+  Updates the "base_response_json" object
+*/
+async function query_user_Base()
+{
+  try
+  {
+    base_response_json = await query_user(URL_USER_BASE_REQUEST, base_response_json, true);
+    console.log(base_response_json);
+    REPO_Number = base_response_json.public_repos;
+    console.log("User: ",base_response_json.login,"\nRepo count: ",base_response_json.public_repos,"\nLast updated: ",base_response_json.updated_at);
+  }
+  catch (error)
+  {
+    console.error("Query_user await function Error!");
+    console.error(error);
+  }
+
+};
+
+/*
+  {Query_User_Repos} Asynchronous repository query function
+
+  This passes decorated url and data objects for the main "Query_User" url requester function
+
+  Controlls requests for users repositories
+
+  Updates the "repo_response_json" object
+*/
+async function query_user_Repos()
+{
+  try
+  {
+    repo_response_json = await query_user(URL_USER_FOUND_REPOS, repo_response_json, false);
+    /*JSON.Array repo_list = repo_response_json*/
+    //console.log(repo_response_json);
+    update_Repos_Stats();
+    //console.log("User: ",base_response_json.login,"\nRepo count: ",base_response_json.public_repos,"\nLast updated: ",base_response_json.updated_at);
+  }
+  catch (error)
+  {
+    console.error("Query_user await function Error!");
+    console.error(error);
+  }
+
+};
+
+/*
+  {Query_User_Repos_Readmes} Asynchronous repository query function for readme.md files
+
+  This passes decorated url and data objects for the main "Query_User" url requester function
+
+  Controlls requests for readme files on repositories
+  
+  #
+*/
+async function query_user_repos_readmes()
+{
+  //TODO
+
+};
+
 
 function update_Repos_Stats()
 {
@@ -139,8 +197,18 @@ function update_Repos_Stats()
   }
 };
 
-query_user_Base();
-query_user_Repos();
+function update_all()
+{
+  query_user_Base();
+  query_user_Repos();
+};
+
+function update_repo(repo_name)
+{
+  //TODO: request update on single repo and sub stats
+}
+
+update_all()
 app.get('/', function(req, res) 
 { 
   res.send(base_response_json.toString()+"\n");
