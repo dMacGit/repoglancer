@@ -42,6 +42,22 @@ var REPOS_lastUpdated;
 var REPO_Number;
 var REPO_List  = {};
 
+// Below are some JSON object templates
+/*
+Using Json to store custom object: {
+ repo_name: 
+ "last_updateTime",
+ "last_commit",
+ "readme_last_updateTime",
+ latest_tag = { time, version, description},
+ latest_release = { time, version, description},
+ rawRepoObject,
+}
+*/
+var latest_tag = { "tag_version": "", "tag_time": "", "tag_description": ""};
+var latest_release = { "release_version": "", "release_time": "", "release_description": "" };
+var REPO_Meta = { "repo_name": "", "repo_desc": "", "last_repoUpdateTime": "", "last_commit": "", "readme_last_updateTime": "", "latest_tag": {}, "latest_release": {}, "raw_RepoData":{} };
+
 // Server sync variables
 var lastUpdatedTime;
 var update_Limit = 1; //<-- Set this as default to 15 (Minutes)
@@ -183,17 +199,53 @@ async function query_user_Repos()
 async function query_user_repos_readmes()
 {
   //TODO
+  /*
+  - {README.md} Use [https://api.github.com/users/USER_NAME/repos/REPO_NAME/commits?path=README.md] after Repo to get commits targeting README.md file updates.
+   (Use jsonObject[0].commit.committer.date for latest commit)
+   */
+  try
+  {
+    repo_response_json = await query_user(URL_USER_FOUND_REPOS, repo_response_json, false);
+    /*JSON.Array repo_list = repo_response_json*/
+    //console.log(repo_response_json);
+    update_Repos_Stats();
+    //console.log("User: ",base_response_json.login,"\nRepo count: ",base_response_json.public_repos,"\nLast updated: ",base_response_json.updated_at);
+  }
+  catch (error)
+  {
+    console.error("Query_user await function Error!");
+    console.error(error);
+  }
 
 };
 
+/*
+var latest_tag = { "tag_version": "", "tag_time": "", "tag_description": ""};
+var latest_release = { "release_version": "", "release_time": "", "release_description": "" };
+var REPO_Meta = { "repo_name": "", "repo_desc": "", "last_repoUpdateTime": "", "last_commit": "", "readme_last_updateTime": "", "latest_tag": {}, "latest_release": {}, "raw_RepoDate":{} };
+*/
+
+function REPO_META()
+{
+
+};
 
 function update_Repos_Stats()
 {
+  console.log("Storing Repo meta....");
   for (var i = 0; i < REPO_Number; i++) 
   {
+    //Construct Json Meta object
+    var REPO_Meta = {};
     var repo_name = repo_response_json[i].name;
-    REPO_List[repo_name] = repo_response_json[i];
-    console.log("=======================\nRepo number:",i,"\nName:",repo_name,"\n",REPO_List[repo_name]);
+    REPO_Meta["repo_name"] = repo_name;
+    REPO_Meta["repo_desc"] = repo_response_json[i].description;
+    REPO_Meta["last_repoUpdateTime"] = repo_response_json[i].updated_at;
+    REPO_Meta["raw_RepoData"] = repo_response_json[i];
+    
+    REPO_List["repo_name"] = repo_name;
+    REPO_List["repo_meta"] = REPO_Meta;
+    console.log("==================\nRepo number:",i,"\nName:",repo_name,"\nPrinting saved Repo meta for:",REPO_List["repo_name"],"\n----\n",REPO_List["repo_meta"]);
   }
 };
 
@@ -206,7 +258,7 @@ function update_all()
 function update_repo(repo_name)
 {
   //TODO: request update on single repo and sub stats
-}
+};
 
 update_all()
 app.get('/', function(req, res) 
