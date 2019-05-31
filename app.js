@@ -24,6 +24,7 @@ const port = 3000
 // Response variables
 var base_response_json = "{ Url Error: No data returned }";
 var repo_response_json;
+var repo_readme_json;
 
 // Request URL variables
 var USER_NAME = 'dMacGit' //<-- Change this based on github username/profile
@@ -187,6 +188,71 @@ async function query_user_Repos()
 
 };
 
+
+/*
+  Test async function. Delete if doesn't work!!!
+*/
+async function update_all_repos()
+{
+
+  try
+  {
+    base_response_json = await query_user(URL_USER_BASE_REQUEST, base_response_json, true);
+    //console.log(base_response_json);
+    REPO_Number = base_response_json.public_repos;
+    console.log("User: ",base_response_json.login,"\nRepo count: ",base_response_json.public_repos,"\nLast updated: ",base_response_json.updated_at);
+  }
+  catch (error)
+  {
+    console.error("Query_user await function Error!");
+    console.error(error);
+  }
+
+  try
+  {
+    repo_response_json = await query_user(URL_USER_FOUND_REPOS, repo_response_json, false);
+  }
+  catch (error)
+  {
+    console.error("Query_user await function Error!");
+    console.error(error);
+  }
+
+  try
+  {
+    var readme_url = URL_REPO_COMMIT_REQUEST_README_PREFIX+repo_name+URL_REPO_COMMIT_REQUEST_README_SUFFIX;
+    var readme_json = await query_user(readme_url, repo_readme_json, false);
+
+  }
+  catch (error)
+  {
+    console.error("Query_user await function Error!");
+    console.error(error);
+  }
+
+
+  console.log("Storing Repo meta....");
+  for (var i = 0; i < REPO_Number; i++) 
+  {
+    //Construct Json Meta object
+    var REPO_Meta = {};
+    var repo_name = repo_response_json[i].name;
+    REPO_Meta["repo_name"] = repo_name;
+    REPO_Meta["repo_desc"] = repo_response_json[i].description;
+    REPO_Meta["last_repoUpdateTime"] = repo_response_json[i].updated_at;
+    //REPO_Meta["readme_last_updateTime"] = readme_json[0].commit.committer.date
+    REPO_Meta["raw_RepoData"] = repo_response_json[i];
+    
+    REPO_List[repo_name] = REPO_Meta;
+    console.log("==================\nRepo number:",i,"\nName:",repo_name,"\nPrinting saved Repo meta for:",REPO_List[repo_name].repo_name,"\n----\n",REPO_List[repo_name]);
+
+    console.log("<<<<< \nRepo Check\nName: ",REPO_List["repoglancer"]);
+  
+  }
+
+};
+
+
 /*
   {Query_User_Repos_Readmes} Asynchronous repository query function for readme.md files
 
@@ -260,7 +326,7 @@ function update_repo(repo_name)
   //TODO: request update on single repo and sub stats
 };
 
-update_all()
+update_all_repos()
 app.get('/', function(req, res) 
 { 
   res.send(base_response_json.toString()+"\n");
