@@ -11,6 +11,10 @@ Simple Nodejs webserver to show basic updated stats of users github repositories
 >\# npm install express --save
 - Clone this project to your target folder
 >\#Sudo Git clone https://github.com/dMacGit/repoglancer.git
+- **You will need to create a Github personal Oauth token from in your github account.** This is needed due to possible rate limits that the server may hit.
+  Read [this](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line) handy guide on how to do this.
+- Now save this token-name and token in a **token.txt** file within a subfolder called **oauth** in the target directory. The token-name and token should look like this in **token.txt** file:
+>tokenName:token
 
 ## Usage
 
