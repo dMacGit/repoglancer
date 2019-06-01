@@ -1,4 +1,6 @@
 const request = require('request')
+const fs = require('fs')
+const os = require('os')
 const timeGrabber = require('./serverTime.js')
 const express = require('express')
 const app = express()
@@ -21,18 +23,27 @@ const port = 3000
   It then displays this in the web page/app for easy viewing.
 */
 
+//Below are Oauth login credentials
+//This is required for more than 60 request/hour
+var TOKEN_FOLDER_PATH = "./oauth/"
+var TOKEN_FILE = "token.txt"
+var oauth_name = ""
+var oauth_token = ""
+var RATE_LIMITED = false;
 // Response variables
 var base_response_json = "{ Url Error: No data returned }";
 var repo_response_json;
 var repo_readme_json;
+var rate_limit_check;
 
 // Request URL variables
 var USER_NAME = 'dMacGit' //<-- Change this based on github username/profile
+var URL_RATE_LIMIT_CHECK = "https://api.github.com/rate_limit";
 var URL_USER_BASE_REQUEST = 'https://api.github.com/users/'+USER_NAME;
 var URL_USER_FOUND_REPOS = URL_USER_BASE_REQUEST+'/repos';
 var URL_USER_REPO_BASE = URL_USER_FOUND_REPOS+'/' // Add RepoName to end
 var URL_REPO_COMMIT_REQUEST_README_PREFIX = URL_USER_REPO_BASE // Add RepoName to end
-var URL_REPO_COMMIT_REQUEST_README_SUFFIX = '/commits?path=README.md';
+var URL_REPO_COMMIT_REQUEST_README_SUFFIX = '/commits/master?path=README.md';
 var URL_REPO_TAGS_PREFIX = URL_USER_REPO_BASE // Add RepoName to end
 var URL_REPO_TAGS_SUFFIX = '/tags'
 var URL_REPO_RELEASES_PREFIX = URL_USER_REPO_BASE // Add RepoName to end
@@ -80,6 +91,31 @@ var update_Limit = 1; //<-- Set this as default to 15 (Minutes)
 */
 
 /*
+  { Token_Loader } Simple file reader function to load token into app
+*/
+function Token_Loader(dir,fileName)
+{
+  console.log(dir+fileName)
+  /*
+  fs.readFile(dir+fileName, function read(err, data) {
+    if (err) {
+        throw err;
+    }
+    oauth_name = data.toString().split(':')[0];
+    oauth_token = data.toString().split(':')[1];
+    console.log("Loaded Oauth token:",oauth_name,"=>",oauth_token);
+  });
+  */
+  var data = fs.readFileSync(dir+fileName, "utf8")
+  {
+    oauth_name = data.toString().split(':')[0];
+    oauth_token = data.toString().split(':')[1];
+    console.log("Loaded Oauth token:",oauth_name,"=>",oauth_token);
+  };
+  
+};
+
+/*
   {Query_User} Main url requester fucntion
 
   This is used by decorator functions [] to simplify url reqesting
@@ -91,21 +127,40 @@ var update_Limit = 1; //<-- Set this as default to 15 (Minutes)
 */
 function query_user(url_query, result_data, query_base)
 {
-  return new Promise((resolve, reject) => {
 
+  return new Promise((resolve, reject) => {
+      var auth = "token "+oauth_token.toString();
+      console.log(auth);
       request({
 
         headers: {
           'User-Agent': USER_NAME,
+          'Authorization': auth,
           'Accept': 'application/vnd.github.v3+json',
           'Content-Type': 'application/json'
         },
+        //Authorization: "token "+oauth_token,
         uri: url_query,
         method: 'GET'
       }, function(error,response,body)
       {
         console.error('error:',error); //Handle (Catch) any error
-        console.log('status-code:',response && response.statusCode); //Print out response and status.
+        if(response.statusCode != 403)
+        {
+          lastUpdatedTime = timeGrabber.returnTime();
+          console.log("User: ["+USER_NAME+"] git details cached @ ",lastUpdatedTime);
+          result_data = JSON.parse(body);
+          resolve(result_data);
+          console.log('status-code:',response && response.statusCode); //Print out response and status.
+
+        }
+        else
+        {
+          console.log('status-code:',response && response.statusCode); //Print out response and status.
+          RATE_LIMITED = true;
+          throw new Error("[ 403 Error! ] Rate Limited");
+          return
+        }
         
         
         /* 
@@ -118,10 +173,7 @@ function query_user(url_query, result_data, query_base)
           - Last update (updated_at) Timestamp
 
         */    
-        lastUpdatedTime = timeGrabber.returnTime();
-        console.log("User: ["+USER_NAME+"] git details cached @ ",lastUpdatedTime);
-        result_data = JSON.parse(body);
-        resolve(result_data);
+        
       });
     });
 
@@ -146,17 +198,26 @@ function query_user(url_query, result_data, query_base)
 */
 async function query_user_Base()
 {
-  try
+  if (RATE_LIMITED)
   {
-    base_response_json = await query_user(URL_USER_BASE_REQUEST, base_response_json, true);
-    console.log(base_response_json);
-    REPO_Number = base_response_json.public_repos;
-    console.log("User: ",base_response_json.login,"\nRepo count: ",base_response_json.public_repos,"\nLast updated: ",base_response_json.updated_at);
+    throw new Error("[ 403 Error! ] Rate Limited");
+    return
   }
-  catch (error)
+  else 
   {
-    console.error("Query_user await function Error!");
-    console.error(error);
+    try
+    {
+      base_response_json = await query_user(URL_USER_BASE_REQUEST, base_response_json, true);
+      console.log(base_response_json);
+      REPO_Number = base_response_json.public_repos;
+      console.log("User: ",base_response_json.login,"\nRepo count: ",base_response_json.public_repos,"\nLast updated: ",base_response_json.updated_at);
+    }
+    catch (error)
+    {
+      console.error("Query_user await function Error!");
+      console.error(error);
+    }
+
   }
 
 };
@@ -194,6 +255,24 @@ async function query_user_Repos()
 */
 async function update_all_repos()
 {
+  //First check rate Limit
+  try
+  {
+    rate_limit_check = await query_user(URL_RATE_LIMIT_CHECK, rate_limit_check, true);
+    //console.log(base_response_json);
+    
+    console.log("Rate limit check: ",rate_limit_check);
+  }
+  catch (error)
+  {
+    console.error("Base response await function Error!");
+    console.error(error);
+  }
+  if (RATE_LIMITED)
+  {
+    throw new Error("[ 403 Error! ] Rate Limited");
+    //return;
+  }
 
   try
   {
@@ -204,8 +283,13 @@ async function update_all_repos()
   }
   catch (error)
   {
-    console.error("Query_user await function Error!");
+    console.error("Base response await function Error!");
     console.error(error);
+  }
+  if (RATE_LIMITED)
+  {
+    throw new Error("[ 403 Error! ] Rate Limited");
+    //return;
   }
 
   try
@@ -214,21 +298,11 @@ async function update_all_repos()
   }
   catch (error)
   {
-    console.error("Query_user await function Error!");
+    console.error("Repo response await function Error!");
     console.error(error);
   }
 
-  try
-  {
-    var readme_url = URL_REPO_COMMIT_REQUEST_README_PREFIX+repo_name+URL_REPO_COMMIT_REQUEST_README_SUFFIX;
-    var readme_json = await query_user(readme_url, repo_readme_json, false);
-
-  }
-  catch (error)
-  {
-    console.error("Query_user await function Error!");
-    console.error(error);
-  }
+  
 
 
   console.log("Storing Repo meta....");
@@ -237,16 +311,29 @@ async function update_all_repos()
     //Construct Json Meta object
     var REPO_Meta = {};
     var repo_name = repo_response_json[i].name;
+    try
+    {
+      var readme_url = URL_REPO_COMMIT_REQUEST_README_PREFIX+repo_name+URL_REPO_COMMIT_REQUEST_README_SUFFIX;
+      console.log("README url:",readme_url);
+      var readme_json = await query_user(readme_url, readme_json, false);
+
+    }
+    catch (error)
+    {
+      console.error("Readme request await function Error!");
+      console.error(error);
+    }
     REPO_Meta["repo_name"] = repo_name;
     REPO_Meta["repo_desc"] = repo_response_json[i].description;
     REPO_Meta["last_repoUpdateTime"] = repo_response_json[i].updated_at;
+    console.log("++ Test readme object output ++",readme_json);
     //REPO_Meta["readme_last_updateTime"] = readme_json[0].commit.committer.date
     REPO_Meta["raw_RepoData"] = repo_response_json[i];
     
     REPO_List[repo_name] = REPO_Meta;
-    console.log("==================\nRepo number:",i,"\nName:",repo_name,"\nPrinting saved Repo meta for:",REPO_List[repo_name].repo_name,"\n----\n",REPO_List[repo_name]);
+    //console.log("==================\nRepo number:",i,"\nName:",repo_name,"\nPrinting saved Repo meta for:",REPO_List[repo_name].repo_name,"\n----\n",REPO_List[repo_name]);
 
-    console.log("<<<<< \nRepo Check\nName: ",REPO_List["repoglancer"]);
+    //console.log("<<<<< \nRepo Check\nName: ",REPO_List["repoglancer"]);
   
   }
 
@@ -325,6 +412,9 @@ function update_repo(repo_name)
 {
   //TODO: request update on single repo and sub stats
 };
+
+Token_Loader(TOKEN_FOLDER_PATH,TOKEN_FILE);
+
 
 update_all_repos()
 app.get('/', function(req, res) 
