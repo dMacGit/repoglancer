@@ -36,18 +36,21 @@ var base_response_json = "{ Url Error: No data returned }";
 var repo_response_json;
 var repo_readme_json;
 var rate_limit_check;
+var tags_response_json;
+var releases_response_json;
 
 // Request URL variables
 var USER_NAME = 'dMacGit' //<-- Change this based on github username/profile
 var URL_RATE_LIMIT_CHECK = "https://api.github.com/rate_limit";
-var URL_USER_BASE_REQUEST = 'https://api.github.com/users/'+USER_NAME;
+var URL_USER_BASE_REQUEST = 'https://api.github.com/users/'+USER_NAME; 
+var URL_REPO_BASE_REQUEST = 'https://api.github.com/repos/';
 var URL_USER_FOUND_REPOS = URL_USER_BASE_REQUEST+'/repos';
 var URL_USER_REPO_BASE = URL_USER_FOUND_REPOS+'/' // Add RepoName to end
-var URL_REPO_COMMIT_REQUEST_README_PREFIX = 'https://api.github.com/repos/'+USER_NAME+'/' // Add RepoName to end
+var URL_REPO_COMMIT_REQUEST_README_PREFIX = URL_REPO_BASE_REQUEST+USER_NAME+'/' // Add RepoName to end
 var URL_REPO_COMMIT_REQUEST_README_SUFFIX = '/commits/master?path=README.md';
-var URL_REPO_TAGS_PREFIX = URL_USER_REPO_BASE // Add RepoName to end
+var URL_REPO_TAGS_PREFIX = URL_REPO_BASE_REQUEST+USER_NAME+'/' // Add RepoName to end //https://api.github.com/repos/USER_NAME/REPO_NAME/tags
 var URL_REPO_TAGS_SUFFIX = '/tags'
-var URL_REPO_RELEASES_PREFIX = URL_USER_REPO_BASE // Add RepoName to end
+var URL_REPO_RELEASES_PREFIX = URL_REPO_BASE_REQUEST+USER_NAME+'/' // Add RepoName to end //https://api.github.com/repos/USER_NAME/REPO_NAME/releases
 var URL_REPO_RELEASES_SUFFIX = '/releases'
 
 // User Repository variables
@@ -67,8 +70,8 @@ Using Json to store custom object: {
  rawRepoObject,
 }
 */
-var latest_tag = { "tag_version": "", "tag_time": "", "tag_description": ""};
-var latest_release = { "release_version": "", "release_time": "", "release_description": "" };
+var LATEST_TAG = { "tag_version": "", "tag_commit_sha": ""};
+var LATEST_RELEASE = { "release_version": "", "release_time": "", "release_description": "" };
 var REPO_Meta = { "repo_name": "", "repo_desc": "", "last_repoUpdateTime": "", "last_commit": "", "readme_last_updateTime": "", "latest_tag": {}, "latest_release": {}, "raw_RepoData":{} };
 
 // Server sync variables
@@ -136,10 +139,11 @@ function query_user(url_query, result_data, query_base)
         if(response.statusCode != 403)
         {
           lastUpdatedTime = timeGrabber.returnTime();
-          console.log("User: ["+USER_NAME+"] git details cached @ ",lastUpdatedTime);
+          //console.log("User: ["+USER_NAME+"] git details cached @ ",lastUpdatedTime);
           result_data = JSON.parse(body);
           resolve(result_data);
           console.log('status-code:',response && response.statusCode); //Print out response and status.
+          console.log('Url that was sent:',url_query)
 
         }
         else
@@ -251,12 +255,14 @@ async function update_all_repos()
     console.error(error);
   }
 
-  console.log("Storing Repo meta....");
+  console.log("Requesting & Storing Repo meta....");
   for (var i = 0; i < REPO_Number; i++) 
   {
     //Construct Json Meta object
     var REPO_Meta = {};
     var repo_name = repo_response_json[i].name;
+    console.log("Requesting Meta data on Repo @ index:",i,repo_name);
+    console.log("Grabbing - Readme info");
     try
     {
       var readme_url = URL_REPO_COMMIT_REQUEST_README_PREFIX+repo_name+URL_REPO_COMMIT_REQUEST_README_SUFFIX;
@@ -267,6 +273,28 @@ async function update_all_repos()
       console.error("Readme request await function Error!");
       console.error(error);
     }
+    console.log("Grabbing - Tags info");
+    try
+    {
+      tags_response_json = await query_user(URL_REPO_TAGS_PREFIX+repo_name+URL_REPO_TAGS_SUFFIX, tags_response_json, false);
+    }
+    catch (error)
+    {
+      console.error("Tags response await function Error!");
+      console.error(error);
+    }
+    console.log("Grabbing - Releases info");
+    try
+    {
+      releases_response_json = await query_user(URL_REPO_RELEASES_PREFIX+repo_name+URL_REPO_RELEASES_SUFFIX, releases_response_json, false);
+    }
+    catch (error)
+    {
+      console.error("Releases response await function Error!");
+      console.error(error);
+    }
+
+    console.log("Storing - Repo",repo_name);
     REPO_Meta["repo_name"] = repo_name;
     REPO_Meta["repo_desc"] = repo_response_json[i].description;
     REPO_Meta["last_repoUpdateTime"] = repo_response_json[i].updated_at;
@@ -274,11 +302,56 @@ async function update_all_repos()
     REPO_Meta["readme_last_updateTime"] = readme_json.commit.committer.date;
     REPO_Meta["readme_last_updateMessage"] = readme_json.commit.message;
     REPO_Meta["raw_RepoData"] = repo_response_json[i];
+
+    var skip_tags = false;
+    var skip_releases = false;
+    if( tags_response_json.length === 0)
+    {
+      skip_tags =  true;
+      console.log("No tags found! Skipping over...");
+    }
+    else
+    {
+      LATEST_TAG["tag_version"] = tags_response_json[0].name;
+      LATEST_TAG["tag_commit_sha"] = tags_response_json[0].commit.sha;
+      REPO_Meta["tags"] = LATEST_TAG;
+    }
+    if( releases_response_json.length === 0)
+    {
+      skip_releases =  true;
+      console.log("No releases found! Skipping over...");
+    }
+    else 
+    {
+      LATEST_RELEASE["release_version"] = releases_response_json[0].tag_name;
+      LATEST_RELEASE["release_time"] = releases_response_json[0].created_at;
+      LATEST_RELEASE["release_description"] = releases_response_json[0].name;
+      REPO_Meta["releases"] = LATEST_RELEASE;
+    }
+    
     
     REPO_List[repo_name] = REPO_Meta;
-    console.log("==================\nRepo number:",i,"\nName:",REPO_List[repo_name].repo_name,"\n--> Saved!\n=================");
-    //console.log("Printing out the Meta data:",REPO_List[repo_name]);
-  
+
+    console.log("=================");
+    console.log("Quick printing",REPO_List[repo_name].repo_name);
+    console.log("Description:",REPO_List[repo_name].repo_desc);
+    console.log("Last updated:",REPO_List[repo_name].last_repoUpdateTime);
+    console.log("Last commit:","not found");
+    console.log("Readme updated last:",REPO_List[repo_name].readme_last_updateTime);
+    if (!skip_tags) 
+    {
+      console.log("Latest Tag:",REPO_List[repo_name].tags.tag_version);
+      console.log("Latest Tag commit sha:",REPO_List[repo_name].tags.tag_commit_sha);
+    }
+    
+    if (!skip_releases)
+    {
+      console.log("Latest Release:",REPO_List[repo_name].releases.release_version);
+      console.log("Latest Release Date:",REPO_List[repo_name].releases.release_time);
+      console.log("Latest Release Description:",REPO_List[repo_name].releases.release_description);
+    }
+    console.log("-----------------");
+      
   }
 
 };
