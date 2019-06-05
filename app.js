@@ -6,6 +6,10 @@ const express = require('express')
 const app = express()
 const port = 3000
 
+//Setting up local folder for Pug Template engine
+app.set('views', './views')
+app.set('view engine', 'pug')
+
 /*
   Repoglance Nodejs Application
 
@@ -398,9 +402,16 @@ Token_Loader(TOKEN_FOLDER_PATH,TOKEN_FILE);
 
 update_all_repos()
 
+
 app.get('/', function(req, res) 
 { 
-  res.send(base_response_json.toString()+"\n");
+  //console.log(Object.keys(REPO_List)[0])
+  //res.render('main', { reponame: Object.keys(REPO_List)[0] })
+  res.render('main', 
+  {
+    app_name: "Repoglancer", repo_name: "Test Repo", repo_update: "Today", last_commit: "&ghtrd$", readme_update: "Today", tag_version: "v1.13", tag_sha: "%fghew", release_version: "v1.0", release_date: "Today", release_desc: "Major Update", 
+  });
+  //res.send(base_response_json.toString()+"\n");
   console.log(timeGrabber.returnTime());
 });
 

@@ -1,0 +1,78 @@
+body{
+  margin: .5em;
+}
+
+#test{
+  display: inline-grid;
+  width: 90%;
+  height: 2em;
+  padding: 0;
+  margin: .5em 5%;
+  grid-template-rows: 1;
+  grid-template-coloums: repeat(9,1fr);
+  grid-template-areas: 
+    "repo-name last-update last-commit readme-update tag-version tag-sha release-version release-date release-desc"
+}
+.radius-start
+{
+  border: none;
+  border-radius: 10px 0 0 10px;
+}
+.radius-end
+{
+  border: none;
+  border-radius: 0 10px 10px 0px;
+}
+
+.repo-div
+{
+  height: 2em;
+  vertical-align: center;
+  text-align: center;
+}
+
+.repo-name {
+  grid-area: repo-name;
+  background-color: blue;
+}
+.repo-update {
+  grid-area: last-update;
+  background-color: blue;
+}
+.last-commit {
+  grid-area: last-commit;
+  background-color: blue;
+}
+.readme-update {
+  grid-area: readme-update;
+  background-color: blue;
+}
+.tag-version {
+  grid-area: tag-version;
+  background-color: blue;
+}
+.tag-sha {
+  grid-area: tag-sha;
+  background-color: blue;
+}
+.release-version {
+  grid-area: release-version;
+  background-color: blue;
+}
+.release-date {
+  grid-area: release-date;
+  background-color: blue;
+}
+.release-desc {
+  grid-area: release-desc;
+  background-color: blue;
+}
+
+p
+{
+  margin-top: .5em;
+  vertical-align: center;
+  text-align: center;
+  width: auto;
+
+}
