@@ -2,7 +2,7 @@ body{
   margin: .5em;
 }
 
-#test{
+.repo_div{
   display: inline-grid;
   width: 90%;
   height: 2em;
