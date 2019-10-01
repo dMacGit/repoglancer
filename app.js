@@ -117,14 +117,14 @@ function Token_Loader(dir,fileName)
 };
 
 /*
-  {Query_User} Main url requester fucntion
+  {Query_User} Main url requester function
 
-  This is used by decorator functions [] to simplify url reqesting
-  Handles header generating, and error handling of request/reponses
-  Also keeps track of update time for controll of server syncing and cacheing
+  This is used by decorator functions [] to simplify url requesting
+  Handles header generating, and error handling of request/responses
+  Also keeps track of update time for control of server syncing and caching
 
   Takes as input the URL_QUERY string, RETURN_DATA object, and third Boolean flag* (*Look into removing this flag!)
-  Uses promise/resove principle to return data to calling functions
+  Uses promise/resolve principle to return data to calling functions
 */
 function query_user(url_query, result_data, query_base)
 {
@@ -412,7 +412,8 @@ app.get('/', function(req, res)
   //console.log(Object.keys(REPO_List)[0])
   repos = Object.keys(REPO_List)[0]
   testRepo = JSON.parse('[{"app_name": "Repoglancer", "repo_name": "Test Repo", "repo_update": "Today", "last_commit": "&ghtrd$", "readme_update": "Today", "tag_version": "v1.13", "tag_sha": "%fghew", "release_version": "v1.0", "release_date": "Today", "release_desc": "Major Update"}]');
-  res.render('main', { repos: testRepo })
+  oauthData = JSON.parse('[{"oauth_Name":"'+oauth_name+'", "oauth_Token":"'+oauth_token+'"}]');
+  res.render('main', { oauth: oauthData })
   /*res.render('main',
   {
     app_name: "Repoglancer", repo_name: "Test Repo", repo_update: "Today", last_commit: "&ghtrd$", readme_update: "Today", tag_version: "v1.13", tag_sha: "%fghew", release_version: "v1.0", release_date: "Today", release_desc: "Major Update", 
