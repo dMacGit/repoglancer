@@ -1,15 +1,18 @@
 const request = require('request')
+const bodyParser = require('body-parser');
 const fs = require('fs')
 const os = require('os')
 const timeGrabber = require('./serverTime.js')
-const pug = require('pug')
 const express = require('express')
 const app = express()
 const port = 3000
 
-//Setting up local folder for Pug Template engine
-app.set('views', './views')
-app.set('view engine', 'pug')
+//Setting up local folder for EJS Template engine
+
+app.use(express.static(__dirname + '/views'));
+app.set('view engine', 'ejs')
+app.use(bodyParser.urlencoded({extended:true}));
+app.use(bodyParser.json());
 
 /*
   Repoglance Nodejs Application
@@ -407,12 +410,14 @@ Token_Loader(TOKEN_FOLDER_PATH,TOKEN_FILE);
 app.get('/', function(req, res) 
 { 
   //console.log(Object.keys(REPO_List)[0])
-  //res.render('main', { reponame: Object.keys(REPO_List)[0] })
+  repos = Object.keys(REPO_List)[0]
+  testRepo = JSON.parse('[{"app_name": "Repoglancer", "repo_name": "Test Repo", "repo_update": "Today", "last_commit": "&ghtrd$", "readme_update": "Today", "tag_version": "v1.13", "tag_sha": "%fghew", "release_version": "v1.0", "release_date": "Today", "release_desc": "Major Update"}]');
+  res.render('main', { repos: testRepo })
   /*res.render('main',
   {
     app_name: "Repoglancer", repo_name: "Test Repo", repo_update: "Today", last_commit: "&ghtrd$", readme_update: "Today", tag_version: "v1.13", tag_sha: "%fghew", release_version: "v1.0", release_date: "Today", release_desc: "Major Update", 
   });*/
-  res.send("Work in progress... Remove this message!");
+  //res.send("Work in progress... Remove this message!");
   console.log(timeGrabber.returnTime());
 });
 

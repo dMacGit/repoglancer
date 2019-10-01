@@ -1,7 +1,6 @@
-<!DOCTYPE html>
 <html>
     <head>
-        <link rel="stylesheet" type="text/css" href="main.css">
+        <link rel="stylesheet" type="text/css" href="css/style.css">
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
         <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
@@ -9,38 +8,38 @@
     </head>
     <body>
         <div id="test">
-
             <div class="card w-auto">
-              <div class="card-header">Test Repo</div>
+              <div class="card-header"> <%= testRepo[0].repo_name %></div>
               <div id="repo-body" class="card-body w-auto">
                 <div id="last-update" class="card-body-item repo-update">
-                  <p>Today</p>
+                  <p><%= testRepo[0].repo_update %></p>
                 </div>
                 <div id="last-commit" class="card-body-item last-commit">
-                  <p>hytr#&</p>
+                  <p><%= testRepo[0].last_commit %></p>
                 </div>
                 <div id="readme-update" class="card-body-item readme-update">
-                  <p>Today</p>
+                  <p><%= testRepo[0].readme_update %></p>
                 </div>
                 <div id="tag-version" class="card-body-item tag-version">
-                  <p>Tag v1.12</p>
+                  <p><%= testRepo[0].tag_version %></p>
                 </div>
               <div id="tag-sha" class="card-body-item tag-sha">
-                  <p>hjdf567432bf</p>
+                  <p><%= testRepo[0].tag_sha %></p>
                 </div>
               <div id="release-version" class="card-body-item release-version">
-                  <p>Release v1.1</p>
+                  <p><%= testRepo[0].release_version %></p>
                 </div>
               <div id="release-date" class="card-body-item release-date">
-                  <p>Today</p>
+                  <p><%= testRepo[0].release_date %></p>
                 </div>
               <div id="release-desc" class="card-body-item release-desc radius-end">
-                  <p>Initial Release</p>
+                  <p><%= testRepo[0].release_desc %></p>
                 </div>
                 <div id="repo-button" class="card-body-button open-button"><a href="#" class="btn btn-primary">Button</a></div>
               </div>
             </div>
 
         </div>
+
     </body>
 </html>
