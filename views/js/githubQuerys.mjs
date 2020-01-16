@@ -13,7 +13,7 @@ export { query_user, token_Loader
 
 var RATE_LIMITED = false;
 
-function token_Loader(user)
+function token_Loader(user, oauth)
 {
     /*
     This Script simply accepts/checks the users github token from server
@@ -22,10 +22,11 @@ function token_Loader(user)
     var URL_RATE_LIMIT_CHECK = "https://api.github.com/rate_limit";
 
     var rate_limit_check;
-
-    var oName = "<%= oauthData[0].oauth_Name -%>";
-    var oToken = "<%= oauthData[0].oauth_Token -%>";
-    console.log("User Token named: "+oName+"passed from server. Token: "+oToken);
+    //var oauth = JSON.parse('<%- oauth %>');
+    console.log();
+    var oName = oauth[0].oauth_Name;
+    var oToken = oauth[0].oauth_Token;
+    console.log("User Token named: "+oName+" Token: "+oToken);
     console.log("Running rate limit check on token...")
     try
     {
@@ -63,18 +64,33 @@ function query_user(user, oauth_token, url_query, result_data, query_base)
 
   return new Promise((resolve, reject) => {
       var auth = "token "+oauth_token.toString();
-      request({
 
+      console.log("This is the token for "+user+" : "+auth);
+
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.addEventListener("load", function(){
+            console.log(this.responseText);
+            resolve(this.responseText)
+        });
+        xmlHttp.open("GET",url_query,true);
+        xmlHttp.setRequestHeader('User-Agent', user,
+          'Authorization', auth,
+          'Accept', 'application/vnd.github.v3+json',
+          'Content-Type', 'application/json');
+         xmlHttp.send(null);
+         //console.log(xmlHttp.responseText);
+         //resolve(xmlHttp.responseText);
+        /*
         headers: {
-          'User-Agent': USER_NAME,
+          'User-Agent': user,
           'Authorization': auth,
           'Accept': 'application/vnd.github.v3+json',
           'Content-Type': 'application/json'
         },
         //Authorization: "token "+oauth_token,
         uri: url_query,
-        method: 'GET'
-      }, function(error,response,body)
+        method: 'GET'*/
+      /* function(error,response,body)
       {
         if(response.statusCode != 403)
         {
@@ -94,7 +110,7 @@ function query_user(user, oauth_token, url_query, result_data, query_base)
           throw new Error("[ 403 Error! ] Rate Limited");
           return
         }
-      });
+      });*/
     });
 
 };
