@@ -26,26 +26,46 @@ function token_Loader(user, oauth)
     console.log();
     var oName = oauth[0].oauth_Name;
     var oToken = oauth[0].oauth_Token;
+    var tokenString = "token "+oToken.toString();
     console.log("User Token named: "+oName+" Token: "+oToken);
     console.log("Running rate limit check on token...")
     try
     {
         var promise = new Promise(function(resolve, reject) {
             // do a thing, possibly async, then…
-            rate_limit_check = query_user(user, oToken, URL_RATE_LIMIT_CHECK, rate_limit_check, true);
-            if (rate_limit_check.statusCode == 200) {
-                resolve("Stuff worked!");
-            }
-            else
+            //rate_limit_check = "";//query_user(user, oToken, URL_RATE_LIMIT_CHECK, rate_limit_check, true);
+            var githubRequest = new XMLHttpRequest();
+            githubRequest.open("GET",URL_RATE_LIMIT_CHECK);
+            githubRequest.setRequestHeader('User-Agent', user,
+                'Authorization', tokenString,
+                'Accept', 'application/vnd.github.v3+json',
+                'Content-Type', 'application/json');
+            githubRequest.onload = function()
             {
-                console.log(rate_limit_check)
-                reject(Error("It broke"));
-            }
+
+                if (githubRequest.status == 200)
+                {
+                    console.log("ReturnCode: "+githubRequest.status);
+                    console.log(githubRequest.responseText);
+                    resolve();
+
+                }
+                else
+                {
+                    console.log(rate_limit_check,promise)
+                    reject(Error("Issue making Github request! "));
+                }
+            };
+            githubRequest.onerror = function(){
+                reject(Error("Network Error!"));
+            };
+            githubRequest.send();
+
         });
         //rate_limit_check = promise query_user(user, oToken, URL_RATE_LIMIT_CHECK, rate_limit_check, true);
         //console.log(base_response_json);
 
-        console.log("Rate limit check: ",promise);
+        //console.log("Rate limit check: ",promise);
     }
     catch (error)
     {
@@ -55,7 +75,7 @@ function token_Loader(user, oauth)
     if (RATE_LIMITED)
     {
         throw new Error("[ 403 Error! ] Rate Limited");
-        return
+        return;
     }
 }
 
