@@ -12,8 +12,7 @@
             var userName = "dMacGit";
             console.log("Passed from server: "+oauth[0]);
             function startup() {
-                var status = token_Loader(userName,oauth);
-                console.log(status);
+                token_Loader(userName,oauth);
             }
             startup();
 
@@ -22,6 +21,9 @@
     <body>
 
         <div id="test">
+            <div id="ratelimit">
+            <p></p>
+            </div>
             <div class="card w-auto">
               <div class="card-header"> <%= testRepo[0].repo_name %></div>
               <div id="repo-body" class="card-body w-auto">

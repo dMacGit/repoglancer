@@ -23,7 +23,6 @@ function token_Loader(user, oauth)
 
     var rate_limit_check;
     //var oauth = JSON.parse('<%- oauth %>');
-    console.log();
     var oName = oauth[0].oauth_Name;
     var oToken = oauth[0].oauth_Token;
     var tokenString = "token "+oToken.toString();
@@ -31,7 +30,7 @@ function token_Loader(user, oauth)
     console.log("Running rate limit check on token...")
     try
     {
-        var promise = new Promise(function(resolve, reject) {
+        return new Promise(function(resolve, reject) {
             // do a thing, possibly async, then…
             //rate_limit_check = "";//query_user(user, oToken, URL_RATE_LIMIT_CHECK, rate_limit_check, true);
             var githubRequest = new XMLHttpRequest();
@@ -47,7 +46,10 @@ function token_Loader(user, oauth)
                 {
                     console.log("ReturnCode: "+githubRequest.status);
                     console.log(githubRequest.responseText);
-                    resolve();
+                    rate_limit_check = "Not Rate Limited!";
+                    resolve(true);
+                    ratelimit.innerHTML = rate_limit_check;
+
 
                 }
                 else
