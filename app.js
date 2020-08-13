@@ -2,7 +2,7 @@ const request = require('request')
 const bodyParser = require('body-parser');
 const fs = require('fs')
 const os = require('os')
-const timeGrabber = require('./serverTime.js')
+const timeGrabber = require('myServerTime')
 const express = require('express')
 const app = express()
 const port = 3000
@@ -413,7 +413,7 @@ app.get('/', function(req, res)
   repos = Object.keys(REPO_List)[0]
   testRepo = JSON.parse('[{"app_name": "Repoglancer", "repo_name": "Test Repo", "repo_update": "Today", "last_commit": "&ghtrd$", "readme_update": "Today", "tag_version": "v1.13", "tag_sha": "%fghew", "release_version": "v1.0", "release_date": "Today", "release_desc": "Major Update"}]');
   oauthData = JSON.parse('[{"oauth_Name":"'+oauth_name+'", "oauth_Token":"'+oauth_token+'"}]');
-  res.render('main', { oauth: oauthData })
+  res.render('main', { oauth: JSON.stringify(oauthData) })
   /*res.render('main',
   {
     app_name: "Repoglancer", repo_name: "Test Repo", repo_update: "Today", last_commit: "&ghtrd$", readme_update: "Today", tag_version: "v1.13", tag_sha: "%fghew", release_version: "v1.0", release_date: "Today", release_desc: "Major Update", 

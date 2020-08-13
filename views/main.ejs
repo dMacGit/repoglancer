@@ -7,13 +7,12 @@
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
         <script type="module" src="/js/githubQuerys.mjs"></script>
         <script type="module">
-            import { token_Loader } from '/js/githubQuerys.mjs'
-
+            import { token_Loader, query_user } from '/js/githubQuerys.mjs'
+            var oauth = JSON.parse('<%- oauth %>');
             var userName = "dMacGit";
-
+            console.log("Passed from server: "+oauth[0]);
             function startup() {
-                var status = token_Loader(userName);
-                console.log(status);
+                token_Loader(userName,oauth);
             }
             startup();
 
@@ -22,6 +21,9 @@
     <body>
 
         <div id="test">
+            <div id="ratelimit">
+            <p></p>
+            </div>
             <div class="card w-auto">
               <div class="card-header"> <%= testRepo[0].repo_name %></div>
               <div id="repo-body" class="card-body w-auto">

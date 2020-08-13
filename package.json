@@ -7,8 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "dMacGit",
+  "email": "d.g.mcindoe@gmail.com",
   "license": "ISC",
   "dependencies": {
+    "myServerTime": "github:dMacGit/ServerTime",
     "ejs": "^2.7.1",
     "express": "^4.17.1",
     "pug": "^2.0.3",
